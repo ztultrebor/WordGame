@@ -1,6 +1,8 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-beginner-abbr-reader.ss" "lang")((modname wordgame) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+(require 2htdp/batch-io)
+
 
 ; data definitions
 
@@ -43,21 +45,22 @@
     [else ... (fn-on-string (first d))
           ... (fn-on-dictionary (rest d))]))
 
-;constants
+; constants
 
-(define DICTIONARY (list "art" "cat" "hat" "rat" "tar" "add" "dad"))
+(define LOCATION "/usr/share/dict/words")
+(define DICTIONARY (read-lines LOCATION))
 
 
   
 ; functions
 
-(define (get-anagrams word dictionary)
+(define (get-anagrams word)
   ; String -> ListOfString
   ; generate a list of all anagrams of the given word
-  (permutations-to-words (recombine (shuffle (explode word))) dictionary))
-(check-satisfied (list (get-anagrams "rat" DICTIONARY)
-                       (list "art" "rat" "tar")) same-set?)
-(check-satisfied (list (get-anagrams "add" DICTIONARY)
+  (permutations-to-words (recombine (shuffle (explode word)))))
+(check-satisfied (list (get-anagrams "rat")
+                       (list "art" "rat" "tar" "tra")) same-set?)
+(check-satisfied (list (get-anagrams "add")
                        (list "dad" "add")) same-set?)
 
 
@@ -77,7 +80,7 @@
 
 
 (define (permute lo1s0 lo1s1 lo1s2)
-  ; ListOfAny -> ListOfListOfAny
+  ; ListOfAny ListOfAny LisOfAny -> ListOfListOfAny
   ; generate all unique permutations of elements of a given list
   (cond
     [(empty? lo1s2) lo1s0]
@@ -104,33 +107,8 @@
                  same-set?)
 
 
-(define (is-actual-word?/member? string dicto)
-  ; !!!
-  ; String ListOfStrings -> Boolean
-  ; determines if a potential word is found in the dictionary provided
-  ; member? should suffice
-  (member? string dicto)
-  #;
-  (and
-   (not (empty? dicto))
-   (or
-    (string=? (first dicto) string)
-    (is-actual-word? string (rest dicto)))))
-; checks
-(check-expect (member? "cat" DICTIONARY) #t)
-(check-expect (member? "atc" DICTIONARY) #f)
-
-
-(define (fn-on-word/explode word)
-  '())
-; !!!
-; String -> ListOf1String
-; break down a word into a list of 1Strings
-; explode should suffice
-
-
 (define (recombine lolo1s)
-  ; String -> ListOf1String
+  ; ListOfListOf1String -> ListOfString
   ; collapse each element of a ListOfListOf1Strings into a String
   (cond
     [(empty? lolo1s) '()]
@@ -143,23 +121,23 @@
                        (list "cat" "cta" "act" "atc" "tac" "tca")) same-set?)
 
 
-(define (permutations-to-words los dicto)
+(define (permutations-to-words los)
   ; ListOfString, ListOfString -> ListOfString
   ; purge all nonsense permutations from a list. Real words are contained
   ; in the dictionary provided
   (cond
     [(empty? los) '()]
-    [(member? (first los) dicto)
-     (cons (first los) (permutations-to-words (rest los) dicto))]
-    [else (permutations-to-words (rest los) dicto)]))
+    [(member? (first los) DICTIONARY)
+     (cons (first los) (permutations-to-words (rest los)))]
+    [else (permutations-to-words (rest los))]))
 ; checks
 (check-satisfied (list (permutations-to-words
-                        (list "rat" "rta" "art" "atr" "tar" "tra") DICTIONARY)
-                      (list "rat" "art" "tar")) same-set?)
+                        (list "rat" "rta" "art" "atr" "tar" "tra"))
+                      (list "rat" "art" "tar" "tra")) same-set?)
 
 
 (define (create-set lst1 lst2)
-  ; Any ListOfAny -> ListOfAny
+  ; ListOfAny ListOfAny -> ListOfAny
   ; merges two lists into a set; a list in which no items repeat.
   ; assumes the both lists provided qualify as sets
   (cond
@@ -191,7 +169,7 @@
 
 
 (define (same-set? lsets)
-  ; ListOfAny ListOfAny -> Boolean
+  ; ListOfListOfAny  -> Boolean
   ; returns #true if two lists are setwise equivalent, else #false
   (and (= (length (first lsets)) (length (second lsets)))
        (equal? (second lsets) (create-set (first lsets) (second lsets)))
@@ -201,4 +179,4 @@
 
 ; actions!
 
-(get-anagrams "rat" DICTIONARY)
+(get-anagrams "them")
