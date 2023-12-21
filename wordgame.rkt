@@ -45,21 +45,23 @@
 
 ;constants
 
-(define DICTIONARY (list "art" "cat" "hat" "rat" "tar"))
+(define DICTIONARY (list "art" "cat" "hat" "rat" "tar" "add" "dad"))
 
 
   
 ; functions
 
-(define (get-anagrams word)
-  '())
-; !!!
-; String -> ListOfString
-; generate a list of all anagrams of the given word
+(define (get-anagrams word dictionary)
+  ; String -> ListOfString
+  ; generate a list of all anagrams of the given word
+  (permutations-to-words (recombine (shuffle (explode word))) dictionary))
+(check-satisfied (list (get-anagrams "rat" DICTIONARY)
+                       (list "art" "rat" "tar")) same-set?)
+(check-satisfied (list (get-anagrams "add" DICTIONARY)
+                       (list "dad" "add")) same-set?)
 
 
 (define (shuffle lo1s)
-  ; !!!
   ; ListOf1String -> ListOfListOf1String
   ; generate a list of "words" that can be formed
   ; from the letters of the given ListOf1Strings
@@ -128,11 +130,32 @@
 
 
 (define (recombine lolo1s)
-  '())
-; !!!
-; String -> ListOf1String
-; collapse a list of 1Strings into a string
-; implode should suffice
+  ; String -> ListOf1String
+  ; collapse each element of a ListOfListOf1Strings into a String
+  (cond
+    [(empty? lolo1s) '()]
+    [else (cons (implode (first lolo1s)) (recombine (rest lolo1s)))]))
+; checks
+(check-satisfied (list (recombine
+                        (list (list "c" "a" "t") (list "c" "t" "a")
+                              (list "a" "c" "t") (list "a" "t" "c")
+                              (list "t" "a" "c") (list "t" "c" "a")))
+                       (list "cat" "cta" "act" "atc" "tac" "tca")) same-set?)
+
+
+(define (permutations-to-words los dicto)
+  ; ListOfString, ListOfString -> ListOfString
+  ; purge all nonsense permutations from a list. Real words are contained
+  ; in the dictionary provided
+  (cond
+    [(empty? los) '()]
+    [(member? (first los) dicto)
+     (cons (first los) (permutations-to-words (rest los) dicto))]
+    [else (permutations-to-words (rest los) dicto)]))
+; checks
+(check-satisfied (list (permutations-to-words
+                        (list "rat" "rta" "art" "atr" "tar" "tra") DICTIONARY)
+                      (list "rat" "art" "tar")) same-set?)
 
 
 (define (create-set lst1 lst2)
@@ -146,7 +169,7 @@
 
 (define (push-to-set ele lst)
   ; Any ListOfAny -> ListOfAny
-  ; adds an element to a set; a list in which no items repeat.
+  ; adds an element to a set--a list in which no items repeat.
   ; assumes the list provided qualifies as a set
   (cond
     [(empty? lst) (list ele)]
@@ -156,7 +179,7 @@
 
 (define (pull-from-set ele lst)
   ; Any ListOfAny -> ListOfAny
-  ; removes an element to a setif its in there
+  ; removes an element to a set if its in there
   ; assumes the list provided qualifies as a set
   (cond
     [(empty? lst) '()]
@@ -168,6 +191,7 @@
 
 
 (define (same-set? lsets)
+  ; ListOfAny ListOfAny -> Boolean
   ; returns #true if two lists are setwise equivalent, else #false
   (and (= (length (first lsets)) (length (second lsets)))
        (equal? (second lsets) (create-set (first lsets) (second lsets)))
@@ -177,4 +201,4 @@
 
 ; actions!
 
-(shuffle (explode "ddddd"))
+(get-anagrams "rat" DICTIONARY)
