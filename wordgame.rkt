@@ -32,18 +32,6 @@
           ... (fn-on-lolo1s (rest lolo1s))]))
 
 
-; A Dictionary is one of:
-;     - '()
-;     - (cons String ListOfStrings)
-; Its a ListOfStrings arranged in alphabetical order
-#;
-(define (fn-on-dictionary d)
-  (cond
-    [(empty? d) ...]
-    [(pred-on-string (first d)) ... (fn-on-string (first d))
-                                ... (fn-on-dictionary (rest d))]
-    [else ... (fn-on-string (first d))
-          ... (fn-on-dictionary (rest d))]))
 
 ; constants
 
@@ -62,6 +50,7 @@
                        (list "art" "rat" "tar" "tra")) same-set?)
 (check-satisfied (list (get-anagrams "add")
                        (list "dad" "add")) same-set?)
+(check-satisfied (list (get-anagrams "fxq") '()) same-set?)
 
 
 (define (shuffle lo1s)
@@ -179,4 +168,4 @@
 
 ; actions!
 
-(get-anagrams "them")
+(get-anagrams "live")
