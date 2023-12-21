@@ -61,9 +61,10 @@
 (define (shuffle lo1s)
   ; !!!
   ; ListOf1String -> ListOfListOf1String
-  ; generate a list of all letters of the given ListOf1Strings
+  ; generate a list of "words" that can be formed
+  ; from the letters of the given ListOf1Strings
   (permute '() lo1s lo1s))
-; checks on permute
+; checks on shuffle
 (check-satisfied (list (shuffle (list "c")) (list (list "c"))) same-set?)
 (check-satisfied (list (shuffle (list "a" "t"))
                        (list (list "a" "t") (list "t" "a"))) same-set?)
@@ -74,16 +75,31 @@
 
 
 (define (permute lo1s0 lo1s1 lo1s2)
-  ; !!!
-  ; ListOf1String -> ListOfListOf1String
-  ; generate a list of all letters of the given ListOf1Strings
+  ; ListOfAny -> ListOfListOfAny
+  ; generate all unique permutations of elements of a given list
   (cond
     [(empty? lo1s2) lo1s0]
     [(empty? lo1s1) '()]
-    [else (cons (permute (cons (first lo1s1) lo1s0)
-                         (pull-from-set (first lo1s1) lo1s2)
-                         (pull-from-set (first lo1s1) lo1s2))
-                (permute lo1s0 (rest lo1s1) lo1s2))]))
+    [else (smart-merge (permute (cons (first lo1s1) lo1s0)
+                                (pull-from-set (first lo1s1) lo1s2)
+                                (pull-from-set (first lo1s1) lo1s2))
+                       (permute lo1s0 (rest lo1s1) lo1s2))]))
+
+
+(define (smart-merge l1 l2)
+  ; ListOfListOfAny ListOfListOfAny -> ListOfListOfAny
+  ; an auxiliary function for permute
+  ; decides when to create a set from a permited list, and when to cons it
+  (cond
+    [(cons? (first l1)) (create-set l1 l2)]
+    [else (cons l1 l2)]))
+; checks
+(check-satisfied (list (smart-merge (list (list "t" "a")) (list (list "m" "v")))
+                       (list (list "t" "a") (list "m" "v"))) same-set?)
+(check-satisfied (list (smart-merge (list (list "a") (list "b"))
+                                    (list (list "c") (list "d")))
+                       (list (list "a") (list "b") (list "c") (list "d")))
+                 same-set?)
 
 
 (define (is-actual-word?/member? string dicto)
@@ -111,7 +127,7 @@
 ; explode should suffice
 
 
-(define (fn-on-word/implode lo1s)
+(define (recombine lolo1s)
   '())
 ; !!!
 ; String -> ListOf1String
@@ -150,6 +166,7 @@
                        (list "c" "t")) same-set?)
 (check-satisfied (list (pull-from-set "a" (list "a")) '()) same-set?)
 
+
 (define (same-set? lsets)
   ; returns #true if two lists are setwise equivalent, else #false
   (and (= (length (first lsets)) (length (second lsets)))
@@ -157,3 +174,7 @@
        (equal? (first lsets) (create-set (second lsets) (first lsets)))))
 
 
+
+; actions!
+
+(shuffle (explode "ddddd"))
