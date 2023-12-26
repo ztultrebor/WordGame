@@ -43,92 +43,67 @@
 ; functions
 
 (define (get-anagrams word)
-  ; String -> ListOfString
-  ; generate a list of all anagrams of the given word
-  (permutations-to-words (recombine (shuffle (explode word)))))
+  ; String -> [ListOf String]
+  ; generate a list of all valid anagrams of the given word
+  (local (
+          (define (permute lo1s0 lo1s1 lo1s2)
+            ; [ListOf 1String] [ListOf 1String] [ListOf 1String]
+            ; -> [ListOf ListOf 1String]
+            ; generate all unique permutations of elements of a given list
+            (cond
+              [(empty? lo1s2) lo1s0]
+              [(empty? lo1s1) '()]
+              [else
+               (local (
+                       (define (smart-merge l1 l2)
+                         ; [ListOf ListOf 1String] [ListOf ListOf 1String]
+                         ; -> [ListOf ListOf 1String]
+                         ; decides when to create a set from a permuted
+                         ; list, and when to cons it
+                         (cond
+                           [(cons? (first l1)) (create-set l1 l2)]
+                           [else (cons l1 l2)]))
+                       (define (pull-from-set ele lst)
+                         ; 1String [ListOf 1String] -> [ListOf 1String]
+                         ; removes an element to a set if its in there
+                         ; assumes the list provided qualifies as a set
+                         (cond
+                           [(empty? lst) '()]
+                           [(equal? ele (first lst)) (rest lst)]
+                           [else (cons (first lst)
+                                       (pull-from-set ele (rest lst)))]))
+                       (define reduced-set
+                         (pull-from-set (first lo1s1) lo1s2))
+                       (define permute-first
+                         (permute(cons (first lo1s1) lo1s0)
+                                 reduced-set reduced-set))
+                       (define permute-rest (permute lo1s0 (rest lo1s1) lo1s2)))
+                 (smart-merge permute-first permute-rest))]))
+          (define (recombine lolo1s)
+            ; [ListOf ListOf 1String] -> [ListOf String]
+            ; collapse each [ListOf 1String] into a String
+            (cond
+              [(empty? lolo1s) '()]
+              [else (cons (implode (first lolo1s)) (recombine (rest lolo1s)))]))
+          (define (permutations-to-words los)
+            ; [ListOf String] [ListOf String] -> [ListOf String]
+            ; purge all nonsense permutations from a list.
+            ; Real words are contained in the global dictionary indicated
+            (cond
+              [(empty? los) '()]
+              [(member? (first los) DICTIONARY)
+               (cons (first los) (permutations-to-words (rest los)))]
+              [else (permutations-to-words (rest los))]))
+          (define exploded (explode word))
+          (define raw-permutations (permute '() exploded exploded))
+          (define permutations (recombine raw-permutations)))
+    (permutations-to-words permutations)))
+; checks
 (check-satisfied (list (get-anagrams "rat")
                        (list "art" "rat" "tar" "tra")) same-set?)
 (check-satisfied (list (get-anagrams "add")
                        (list "dad" "add")) same-set?)
 (check-satisfied (list (get-anagrams "fxq") '()) same-set?)
-
-
-(define (shuffle lo1s)
-  ; ListOf1String -> ListOfListOf1String
-  ; generate a list of "words" that can be formed
-  ; from the letters of the given ListOf1Strings
-  (permute '() lo1s lo1s))
-; checks on shuffle
-(check-satisfied (list (shuffle (list "c")) (list (list "c"))) same-set?)
-(check-satisfied (list (shuffle (list "a" "t"))
-                       (list (list "a" "t") (list "t" "a"))) same-set?)
-(check-satisfied (list (shuffle (list "c" "a" "t"))
-                       (list (list "c" "a" "t") (list "c" "t" "a")
-                             (list "a" "c" "t") (list "a" "t" "c")
-                             (list "t" "a" "c") (list "t" "c" "a"))) same-set?)
-
-
-(define (permute lo1s0 lo1s1 lo1s2)
-  ; [ListOf 1String] [ListOf 1String] [ListOf 1String]
-  ; -> [ListOf ListOf 1String]
-  ; generate all unique permutations of elements of a given list
-  (local (
-          (define (smart-merge l1 l2)
-            ; [ListOf ListOf 1String] [ListOf ListOf 1String]
-            ; -> [ListOf ListOf 1String]
-            ; decides when to create a set from a permuted
-            ; list, and when to cons it
-            (cond
-              [(cons? (first l1)) (create-set l1 l2)]
-              [else (cons l1 l2)]))
-          (define (pull-from-set ele lst)
-            ; 1String [ListOf 1String] -> [ListOf 1String]
-            ; removes an element to a set if its in there
-            ; assumes the list provided qualifies as a set
-            (cond
-              [(empty? lst) '()]
-              [(equal? ele (first lst)) (rest lst)]
-              [else (cons (first lst) (pull-from-set ele (rest lst)))])))
-    (cond
-      [(empty? lo1s2) lo1s0]
-      [(empty? lo1s1) '()]
-      [else (local (
-                    (define reduced-set (pull-from-set (first lo1s1) lo1s2)))
-              (smart-merge (permute (cons (first lo1s1) lo1s0)
-                                    reduced-set reduced-set)
-                           (permute lo1s0 (rest lo1s1) lo1s2)))])))
-
-
-
-
-
-(define (recombine lolo1s)
-  ; ListOfListOf1String -> ListOfString
-  ; collapse each element of a ListOfListOf1Strings into a String
-  (cond
-    [(empty? lolo1s) '()]
-    [else (cons (implode (first lolo1s)) (recombine (rest lolo1s)))]))
-; checks
-(check-satisfied (list (recombine
-                        (list (list "c" "a" "t") (list "c" "t" "a")
-                              (list "a" "c" "t") (list "a" "t" "c")
-                              (list "t" "a" "c") (list "t" "c" "a")))
-                       (list "cat" "cta" "act" "atc" "tac" "tca")) same-set?)
-
-
-(define (permutations-to-words los)
-  ; ListOfString, ListOfString -> ListOfString
-  ; purge all nonsense permutations from a list. Real words are contained
-  ; in the dictionary provided
-  (cond
-    [(empty? los) '()]
-    [(member? (first los) DICTIONARY)
-     (cons (first los) (permutations-to-words (rest los)))]
-    [else (permutations-to-words (rest los))]))
-; checks
-(check-satisfied (list (permutations-to-words
-                        (list "rat" "rta" "art" "atr" "tar" "tra"))
-                       (list "rat" "art" "tar" "tra")) same-set?)
 
 
 (define (create-set lst1 lst2)
