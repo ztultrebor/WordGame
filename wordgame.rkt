@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-abbr-reader.ss" "lang")((modname wordgame) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+#reader(lib "htdp-intermediate-reader.ss" "lang")((modname wordgame) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
 (require 2htdp/batch-io)
 
 
@@ -69,31 +69,37 @@
 
 
 (define (permute lo1s0 lo1s1 lo1s2)
-  ; ListOfAny ListOfAny LisOfAny -> ListOfListOfAny
+  ; [ListOf 1String] [ListOf 1String] [ListOf 1String]
+  ; -> [ListOf ListOf 1String]
   ; generate all unique permutations of elements of a given list
-  (cond
-    [(empty? lo1s2) lo1s0]
-    [(empty? lo1s1) '()]
-    [else (smart-merge (permute (cons (first lo1s1) lo1s0)
-                                (pull-from-set (first lo1s1) lo1s2)
-                                (pull-from-set (first lo1s1) lo1s2))
-                       (permute lo1s0 (rest lo1s1) lo1s2))]))
+  (local (
+          (define (smart-merge l1 l2)
+            ; [ListOf ListOf 1String] [ListOf ListOf 1String]
+            ; -> [ListOf ListOf 1String]
+            ; decides when to create a set from a permuted
+            ; list, and when to cons it
+            (cond
+              [(cons? (first l1)) (create-set l1 l2)]
+              [else (cons l1 l2)]))
+          (define (pull-from-set ele lst)
+            ; 1String [ListOf 1String] -> [ListOf 1String]
+            ; removes an element to a set if its in there
+            ; assumes the list provided qualifies as a set
+            (cond
+              [(empty? lst) '()]
+              [(equal? ele (first lst)) (rest lst)]
+              [else (cons (first lst) (pull-from-set ele (rest lst)))])))
+    (cond
+      [(empty? lo1s2) lo1s0]
+      [(empty? lo1s1) '()]
+      [else (local (
+                    (define reduced-set (pull-from-set (first lo1s1) lo1s2)))
+              (smart-merge (permute (cons (first lo1s1) lo1s0)
+                                    reduced-set reduced-set)
+                           (permute lo1s0 (rest lo1s1) lo1s2)))])))
 
 
-(define (smart-merge l1 l2)
-  ; ListOfListOfAny ListOfListOfAny -> ListOfListOfAny
-  ; an auxiliary function for permute
-  ; decides when to create a set from a permited list, and when to cons it
-  (cond
-    [(cons? (first l1)) (create-set l1 l2)]
-    [else (cons l1 l2)]))
-; checks
-(check-satisfied (list (smart-merge (list (list "t" "a")) (list (list "m" "v")))
-                       (list (list "t" "a") (list "m" "v"))) same-set?)
-(check-satisfied (list (smart-merge (list (list "a") (list "b"))
-                                    (list (list "c") (list "d")))
-                       (list (list "a") (list "b") (list "c") (list "d")))
-                 same-set?)
+
 
 
 (define (recombine lolo1s)
@@ -122,7 +128,7 @@
 ; checks
 (check-satisfied (list (permutations-to-words
                         (list "rat" "rta" "art" "atr" "tar" "tra"))
-                      (list "rat" "art" "tar" "tra")) same-set?)
+                       (list "rat" "art" "tar" "tra")) same-set?)
 
 
 (define (create-set lst1 lst2)
@@ -142,19 +148,6 @@
     [(empty? lst) (list ele)]
     [(equal? ele (first lst)) lst]
     [else (cons (first lst) (push-to-set ele (rest lst)))]))
-
-
-(define (pull-from-set ele lst)
-  ; Any ListOfAny -> ListOfAny
-  ; removes an element to a set if its in there
-  ; assumes the list provided qualifies as a set
-  (cond
-    [(empty? lst) '()]
-    [(equal? ele (first lst)) (rest lst)]
-    [else (cons (first lst) (pull-from-set ele (rest lst)))]))
-(check-satisfied (list (pull-from-set "a" (list "c" "a" "t"))
-                       (list "c" "t")) same-set?)
-(check-satisfied (list (pull-from-set "a" (list "a")) '()) same-set?)
 
 
 (define (same-set? lsets)
