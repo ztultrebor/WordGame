@@ -66,15 +66,6 @@
   ; This function is auxiliary to get-anagrams
   ; gets all permutations of a given word that has been exploded and parsed
   ; permutations are not guaranteed to be unique
-  (local (
-          (define (pull-from-set ele lst)
-            ; 1String [ListOf 1String] -> [ListOf 1String]
-            ; removes an element from a list if its in there
-            (cond
-              [(equal? ele (first lst)) (rest lst)]
-              [else (cons (first lst)
-                          (pull-from-set ele (rest lst)))])))
-    ; - IN -
     (cond
       [(empty? (second candi-fractures)) (list (implode (first candi-fractures)))]
       [else
@@ -82,8 +73,8 @@
               (map permute
                    (map (lambda (c)
                           (list (cons c (first candi-fractures))
-                                (pull-from-set c (second candi-fractures))))
-                        (second candi-fractures))))])))
+                                (remove c (second candi-fractures))))
+                        (second candi-fractures))))]))
 
 
 #;
