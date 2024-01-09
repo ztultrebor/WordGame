@@ -32,14 +32,19 @@
           ... (fn-on-lolo1s (rest lolo1s))]))
 
 
+(define-struct intermute [prefix suffix])
+; An Intermute is a [[ListOf X] [ListOf X]]
+; it is a tool for constructing a list of permutations
 
+
+; ====================
 ; constants
 
 (define LOCATION "/usr/share/dict/words")
 (define DICTIONARY (read-lines LOCATION))
 
 
-  
+; ====================
 ; functions
 
 (define (get-anagrams word)
@@ -47,7 +52,8 @@
   ; generate a list of all valid anagrams of the given word
   (local (
           (define exploded (explode word))
-          (define indistinct-permutations (permute (list '() exploded)))
+          (define indistinct-permutations
+            (permute (make-intermute '() exploded)))
           (define permutations (list-to-set indistinct-permutations)))
     ; - IN -
     (permutations-to-words permutations)))
@@ -67,11 +73,12 @@
   ; gets all permutations of a given word that has been exploded and parsed
   ; permutations are not guaranteed to be unique
   (match candi-fractures
-    [(list prefix '()) (list (implode prefix))]
-    [(list prefix suffix)
+    [(intermute prefix '()) (list (implode prefix))]
+    [(intermute prefix suffix)
      (foldr append '()
             (map permute
-                 (map (lambda (c) (list (cons c prefix) (remove c suffix)))
+                 (map (lambda (c)
+                        (make-intermute (cons c prefix) (remove c suffix)))
                       suffix)))]))
 
 
@@ -129,6 +136,7 @@
 
 
 
+; ===================
 ; actions!
 
 (get-anagrams "live")
